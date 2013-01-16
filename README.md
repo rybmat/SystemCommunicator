@@ -1,4 +1,4 @@
 SystemCommunicator
 ==================
 
-*nix system communicator based on spread servers architecture
+*nix system communicator based on spread servers architecture -- project for Operating Systems classes.
