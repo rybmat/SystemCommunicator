@@ -4,6 +4,7 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <itemPath>protocol.h</itemPath>
       <itemPath>ui.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
