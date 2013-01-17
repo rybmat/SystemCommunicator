@@ -20,7 +20,7 @@ extern "C" {
 #define ROOM_NAME_MAX_LENGTH 10
 #define MAX_MSG_LENGTH 256
 
-int server_ids[15]; //pamiec wspoldzielona Obszar 1: przechowuje listę idktórych nasłuchują serwery.
+int server_ids[15]; //pamiec wspoldzielona Obszar 1: przechowuje listę id na których nasłuchują serwery.
 
 //Obszar 2: przechowuje powiązania nazw użytkowników z identyfiktablicy struktur:
 typedef struct {
