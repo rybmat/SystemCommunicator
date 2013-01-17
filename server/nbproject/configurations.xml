@@ -6,6 +6,7 @@
                    projectFiles="true">
       <itemPath>log_file.h</itemPath>
       <itemPath>protocol.h</itemPath>
+      <itemPath>server_operations.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
                    displayName="Resource Files"
@@ -16,6 +17,7 @@
                    projectFiles="true">
       <itemPath>log_file.c</itemPath>
       <itemPath>main.c</itemPath>
+      <itemPath>server_operations.c</itemPath>
     </logicalFolder>
     <logicalFolder name="TestFiles"
                    displayName="Test Files"

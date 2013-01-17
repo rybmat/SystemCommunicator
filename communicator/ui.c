@@ -66,9 +66,11 @@ void ui_main(){
         print_content(contacts_win, cnt_title, active_cnt, contacts_iter, contacts_lines);
         command_window_drawing(command_win, "Command");	      
         
+        curs_set(0);
         //petla glowna
 	while(1){
 		keypad(active_win, TRUE);
+                nodelay(active_win, TRUE);
                 c = wgetch(active_win);
 		switch(c){//sprawdza ktory klawisz wcisnieto
 			case KEY_UP://w gore (przesuwanie tresci)
@@ -273,7 +275,6 @@ void ui_main(){
         delwin(command_win);
 //zamkniecie ncurses
 	endwin();
-
 }
 
 void init_strings(){
@@ -329,7 +330,11 @@ void command_window_drawing(WINDOW *win, char* title){
 void get_command(){
     echo();
     nocbreak();
+    curs_set(1);
+    nodelay(active_win, FALSE);
     mvwgetstr(command_win, 1, 1, command);
+    nodelay(active_win, TRUE);
+    curs_set(0);
     cbreak();
     noecho();
     wclear(command_win);
