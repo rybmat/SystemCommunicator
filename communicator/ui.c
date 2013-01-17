@@ -1,8 +1,30 @@
 #include "ui.h"
 
+//ilość wyswietlanych wiadomosci posczegolnego typu
+int all_msg_num = 0;
+int priv_msg_num = 0;
+int room_msg_num = 0;
 
+//liczba lini mozliwych do zadrukowania i iterator po tablicy z trescia dla okienka wiadomosci
+int recived_lines = RECIVED_HEIGHT - 2;
+int recived_iter;
+
+
+
+//liczba lini mozliwych do zadrukowania i iterator po tablicy z trescia dla okienka kontaktow
+int contacts_iter = 0;
+int contacts_lines = CONTACTS_HEIGHT - 2;
+
+//tytuly okienek wiadomosci i kontaktow
+ char* msg_title;
+ char* cnt_title;
 
 void ui_main(){	
+    
+        all_msg_num = 0;
+        priv_msg_num = 0;
+        room_msg_num = 0;
+    
     //poczatek rysowania okienek
         int startx = 1;
         int starty = 1;
@@ -10,25 +32,16 @@ void ui_main(){
         //wcisniety klawisz klawiatury
         int c;
         
-       //tytuly okienek wiadomosci i kontaktow
-        char* msg_title;
-        char* cnt_title;
-        
         //iteratory: aktywne okno, aktywne kontakty, aktywne wiadomosci
         int active_window = 0;
         int active_contacts = 0;
         int active_messages = 0;
         
-        //liczba lini mozliwych do zadrukowania i iterator po tablicy z trescia dla okienka wiadomosci
-        int recived_lines = RECIVED_HEIGHT - 2;
-        int recived_iter;
-        //liczba lini mozliwych do zadrukowania i iterator po tablicy z trescia dla okienka kontaktow
-        int contacts_iter = 0;
-        int contacts_lines = CONTACTS_HEIGHT - 2;
-        
         //zmienna wyjscia z glownej petli
         short exit = 0;
        
+        init_strings();
+        
      //inicjalizacja ncurses
 	initscr();
 	clear();
@@ -45,7 +58,7 @@ void ui_main(){
         active_cnt = people_contacts;
         
      //ustawienie iteratora wiadomosci tak by byly wyswietlane ostatnie wiadomosci   
-        recived_iter = sizeof(all_messages)/sizeof(char*) - recived_lines;
+        recived_iter = 0;
         msg_title = "All messages";
         cnt_title = "People";
         
@@ -77,17 +90,17 @@ void ui_main(){
                                     case RECIVED:
                                         switch(active_messages){
                                             case MESSAGES_ALL:
-                                                if(recived_iter + recived_lines <= sizeof(all_messages)/sizeof(char*)){
+                                                if(recived_iter + recived_lines <= all_msg_num){
                                                         recived_iter++;
                                                 }
                                                 break;
                                             case MESSAGES_PRIV:
-                                                if(recived_iter + recived_lines <= sizeof(priv_messages)/sizeof(char*)){
+                                                if(recived_iter + recived_lines <= priv_msg_num){
                                                         recived_iter++;
                                                 }
                                                 break;
                                             case MESSAGES_ROOM:
-                                                if(recived_iter + recived_lines <= sizeof(room_messages)/sizeof(char*)){
+                                                if(recived_iter + recived_lines <= room_msg_num){
                                                         recived_iter++;
                                                 }
                                                 break;
@@ -118,22 +131,28 @@ void ui_main(){
                                             active_messages = 2;
                                         }
                                         switch(active_messages){
-                                            case MESSAGES_ALL:
-                                                
+                                            case MESSAGES_ALL:                                            
                                                 active_msg = all_messages;
-                                                recived_iter = sizeof(all_messages)/sizeof(char*) - recived_lines;
+                                                recived_iter = all_msg_num - recived_lines;
+                                                if(recived_iter < 0){
+                                                    recived_iter = 0;
+                                                }
                                                 msg_title = "All messages";
                                                 break;
-                                            case MESSAGES_PRIV:
-                                                
+                                            case MESSAGES_PRIV:                                               
                                                 active_msg = priv_messages;
-                                                recived_iter = sizeof(priv_messages)/sizeof(char*) - recived_lines;
+                                                recived_iter = priv_msg_num - recived_lines;
+                                                if(recived_iter < 0){
+                                                    recived_iter = 0;
+                                                }
                                                 msg_title = "Private messages";
                                                 break;
-                                            case MESSAGES_ROOM:
-                                                
+                                            case MESSAGES_ROOM:                                             
                                                 active_msg = room_messages;
-                                                recived_iter = sizeof(room_messages)/sizeof(char*) - recived_lines;
+                                                recived_iter = room_msg_num - recived_lines;
+                                                if(recived_iter < 0){
+                                                    recived_iter = 0;
+                                                }
                                                 msg_title = "Room messages";
                                                 break;
                                         }
@@ -144,14 +163,12 @@ void ui_main(){
                                         }else
                                             active_contacts = 0;
                                         switch(active_contacts){
-                                            case CONTACTS_PEOPLE:
-                                                
+                                            case CONTACTS_PEOPLE:                                               
                                                 active_cnt = people_contacts;
                                                 cnt_title = "People";
                                                 contacts_iter = sizeof(people_contacts)/sizeof(char*) - contacts_lines;
                                                 break;
-                                            case CONTACTS_ROOMS:
-                                                
+                                            case CONTACTS_ROOMS:                                              
                                                 active_cnt = rooms_contacts;
                                                 cnt_title = "Rooms";
                                                 contacts_iter = sizeof(rooms_contacts)/sizeof(char*) - contacts_lines;
@@ -170,22 +187,28 @@ void ui_main(){
                                             active_messages = 0;
                                         }
                                         switch(active_messages){
-                                            case MESSAGES_ALL:
-                                                
+                                            case MESSAGES_ALL:                                            
                                                 active_msg = all_messages;
-                                                recived_iter = sizeof(all_messages)/sizeof(char*) - recived_lines;
+                                                recived_iter = all_msg_num - recived_lines;
+                                                if(recived_iter < 0){
+                                                    recived_iter = 0;
+                                                }
                                                 msg_title = "All messages";
                                                 break;
-                                            case MESSAGES_PRIV:
-                                                
+                                            case MESSAGES_PRIV:                                               
                                                 active_msg = priv_messages;
-                                                recived_iter = sizeof(priv_messages)/sizeof(char*) - recived_lines;
+                                                recived_iter = priv_msg_num - recived_lines;
+                                                if(recived_iter < 0){
+                                                    recived_iter = 0;
+                                                }
                                                 msg_title = "Private messages";
                                                 break;
-                                            case MESSAGES_ROOM:
-                                                
+                                            case MESSAGES_ROOM:                                             
                                                 active_msg = room_messages;
-                                                recived_iter = sizeof(room_messages)/sizeof(char*) - recived_lines;
+                                                recived_iter = room_msg_num - recived_lines;
+                                                if(recived_iter < 0){
+                                                    recived_iter = 0;
+                                                }
                                                 msg_title = "Room messages";
                                                 break;
                                         }
@@ -253,6 +276,18 @@ void ui_main(){
 
 }
 
+void init_strings(){
+    int i;
+    for(i = 0; i < MSG_BUF_SIZE; ++i){
+        priv_messages[i] = '\0';
+        room_messages[i] = '\0';
+        all_messages[i] = '\0';
+    }
+    for(i = 0; i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER; ++i){
+        people_contacts[i] = '\0';
+        rooms_contacts[i] = '\0';
+    }
+}
 
 void print_content(WINDOW *win, char* title, char** content, int begin, int nlines){
     int x = 1, y = 1, i = 0;
@@ -269,7 +304,7 @@ void print_content(WINDOW *win, char* title, char** content, int begin, int nlin
     }
     
     //drukowanie tresci
-    while((content[begin + i] != NULL) && (i < nlines)){
+    while((content[begin + i] != '\0') && (i < nlines)){
         mvwprintw(win, y + i, x, "%s", content[begin + i] );
         ++i;
     }
@@ -302,4 +337,71 @@ void get_command(){
 
 void print_command_message(char* message){
     mvwprintw(command_win, 5, 1, "%s", message);
+}
+
+void add_message(char* message, int msg_type){      
+    int i;
+    
+    if(all_msg_num < MSG_BUF_SIZE){
+        all_messages[all_msg_num] = (char*)malloc(sizeof(char) * (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10));
+        strcpy(all_messages[all_msg_num], message);
+        all_msg_num++;
+    }else{
+        for(i = 0; i < MSG_BUF_SIZE - 1; ++i){
+            free(all_messages[i]);
+            all_messages[i] = (char*)malloc(sizeof(char) * (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10));
+            strcpy(all_messages[i], all_messages[i+1]);
+        }
+        free(all_messages[MSG_BUF_SIZE - 1]);
+        all_messages[MSG_BUF_SIZE - 1] = (char*)malloc(sizeof(char) * (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10));
+        strcpy(all_messages[MSG_BUF_SIZE - 1], message);
+    }
+    recived_iter = all_msg_num - recived_lines;
+    if(recived_iter < 0){
+        recived_iter = 0;
+    }
+   
+    //wiadomosc pokoju
+    if(msg_type == PUBLIC){
+        if(room_msg_num < MSG_BUF_SIZE){
+            room_messages[room_msg_num] = (char*)malloc(sizeof(char) * (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10));
+            strcpy(room_messages[room_msg_num], message);
+            room_msg_num++;
+        }else{
+            for(i = 0; i < MSG_BUF_SIZE - 1; ++i){
+                    free(room_messages[i]);
+                    room_messages[i] = (char*)malloc(sizeof(char) * (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10));
+                    strcpy(room_messages[i], room_messages[i+1]);
+            }
+            free(room_messages[MSG_BUF_SIZE - 1]);
+            room_messages[MSG_BUF_SIZE - 1] = (char*)malloc(sizeof(char) * (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10));
+            strcpy(room_messages[MSG_BUF_SIZE - 1], message);
+        }
+        recived_iter = room_msg_num - recived_lines;
+        if(recived_iter < 0){
+            recived_iter = 0;
+        }
+    }
+    
+    //wiadomosc prywatna
+    if(msg_type == PRIVATE){      
+        if(priv_msg_num < MSG_BUF_SIZE){
+            priv_messages[priv_msg_num] = (char*)malloc(sizeof(char) * (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10));
+            strcpy(priv_messages[priv_msg_num], message);
+            priv_msg_num++;
+        }else{
+           for(i = 0; i < MSG_BUF_SIZE - 1; ++i){
+                    free(priv_messages[i]);
+                    priv_messages[i] = (char*)malloc(sizeof(char) * (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10));
+                    strcpy(priv_messages[i], priv_messages[i+1]);
+            }
+            free(priv_messages[MSG_BUF_SIZE - 1]);
+            priv_messages[MSG_BUF_SIZE - 1] = (char*)malloc(sizeof(char) * (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10));
+            strcpy(priv_messages[MSG_BUF_SIZE - 1], message); 
+        }
+        recived_iter = priv_msg_num - recived_lines;
+        if(recived_iter < 0){
+            recived_iter = 0;
+        }
+    }
 }

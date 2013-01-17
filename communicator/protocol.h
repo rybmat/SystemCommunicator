@@ -35,8 +35,7 @@ typedef struct {
 }ROOM_SERVER;
 
 //Kolejki komunikatów
-enum MSG_TYPE {LOGIN=1, RESPONSE, LOGOUT, REQUEST, MESSAGE, ROOM, SERVER2SERVER,
-USERS_LIST, ROOMS_LIST, ROOM_USERS_LIST};
+enum MSG_TYPE {LOGIN=1, RESPONSE, LOGOUT, REQUEST, MESSAGE, ROOM, SERVER2SERVER};
 typedef struct {
         long type;
         char username[USER_NAME_MAX_LENGTH];

@@ -16,6 +16,7 @@ extern "C" {
 #include <stdlib.h>
 #include <ncurses.h>
 #include <string.h>
+#include "protocol.h"
 
 //wymiary poszczegolnych "okienek" recived - okno wiadomosci
 #define RECIVED_WIDTH 90
@@ -36,22 +37,24 @@ extern "C" {
 #define MESSAGES_ALL 0
 #define MESSAGES_PRIV 1
 #define MESSAGES_ROOM 2
+    
+#define MSG_BUF_SIZE 100
 
 //tablice ostatnich 100 wiadomosci (prywatnych, publicznych, wszystkich)
-char *priv_messages[100];
-char *room_messages[100];
-char *all_messages[100];
+char *priv_messages[MSG_BUF_SIZE];
+char *room_messages[MSG_BUF_SIZE];
+char *all_messages[MSG_BUF_SIZE];
 
 //tablice kontaktow (ludzi i pokojow)
-char *people_contacts[100];
-char *rooms_contacts[100];
+char *people_contacts[MAX_SERVERS_NUMBER * MAX_USERS_NUMBER];
+char *rooms_contacts[MAX_SERVERS_NUMBER * MAX_USERS_NUMBER];
 
 //wskazniki na aktualnie wyswietlane wiadomosci i kontakty
 char **active_msg;
 char **active_cnt;
 
 //tresc komendy
-char command[80];
+char command[300];
 
 //wskazniki na poszczegolne okna - wiadomosci, kontaktow, okno polecen i aktualnie uzywane okno
 WINDOW *recived_win;
@@ -61,6 +64,9 @@ WINDOW *active_win;
 
 //glowna metoda UI - odpowiada za wyswietlanie okienek, poruszanie sie pomiedzy nimi itp
 void ui_main();
+
+//inicjuje tablice stringów wartściami NULL
+void init_strings();
 
 //"drukuje" zawartosc w oknie: win-okno do zadrukowania, title-wyswietlany tytul okna, content-zawartosc do wydruku,
 //begin-indeks pierwszego do wydruku elementu z tablicy, nlines-ilosc lini ktore mozna zadrukowac
@@ -75,6 +81,8 @@ void get_command();
 //wyswietlanie komunikatow w oknie komend: message-tresc komunikatu
 void print_command_message(char* message);
 
+//dodanie nowej wiadomosci do bufora wyswietlanych wiadomosci
+void add_message(char* message, int msg_type);
 
 #ifdef	__cplusplus
 }
