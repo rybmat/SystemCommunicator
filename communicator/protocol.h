@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 
+
 #define USER_NAME_MAX_LENGTH 10
 #define RESPONSE_LENGTH 50
 #define MAX_SERVERS_NUMBER 15
@@ -39,7 +40,7 @@ enum MSG_TYPE {LOGIN=1, RESPONSE, LOGOUT, REQUEST, MESSAGE, ROOM, SERVER2SERVER}
 typedef struct {
         long type;
         char username[USER_NAME_MAX_LENGTH];
-        key_t ipc_num; //nr kolejki na której będzie nasłuchiwał klient
+        int ipc_num; //nr kolejki na której będzie nasłuchiwał klient
 }MSG_LOGIN;
 
 enum RESPONSE_TYPE {LOGIN_SUCCESS, LOGIN_FAILED, LOGOUT_SUCCESS, LOGOUT_FAILED,

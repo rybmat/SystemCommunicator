@@ -17,6 +17,7 @@ extern "C" {
 #include <ncurses.h>
 #include <string.h>
 #include "protocol.h"
+#include "client_operations.h"
 
 //wymiary poszczegolnych "okienek" recived - okno wiadomosci
 #define RECIVED_WIDTH 90

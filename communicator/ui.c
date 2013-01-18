@@ -9,8 +9,6 @@ int room_msg_num = 0;
 int recived_lines = RECIVED_HEIGHT - 2;
 int recived_iter;
 
-
-
 //liczba lini mozliwych do zadrukowania i iterator po tablicy z trescia dla okienka kontaktow
 int contacts_iter = 0;
 int contacts_lines = CONTACTS_HEIGHT - 2;
@@ -18,6 +16,8 @@ int contacts_lines = CONTACTS_HEIGHT - 2;
 //tytuly okienek wiadomosci i kontaktow
  char* msg_title;
  char* cnt_title;
+ 
+ char* command_message;
 
 void ui_main(){	
     
@@ -243,9 +243,6 @@ void ui_main(){
                                get_command();
                             }
                             break;                            
-                        case 27://ESC - wyjscie z petli
-                            exit = 1;
-                            break;
                             
                         case '\t'://TAB - zmiana aktywnego okienka
                             active_window = (active_window + 1) % 3;
@@ -262,9 +259,11 @@ void ui_main(){
                 print_content(recived_win, msg_title, active_msg, recived_iter, recived_lines);
                 print_content(contacts_win, cnt_title, active_cnt, contacts_iter, contacts_lines);
                 command_window_drawing(command_win, "Command");
-
-                if(exit){	
-			break;
+                if(command_message != NULL){
+                        print_command_message(command_message);
+                        if(strcmp(command_message, "logged out") == 0){	
+                                break;
+                        }
                 }
 	}
 	clrtoeol();
@@ -332,7 +331,15 @@ void get_command(){
     nocbreak();
     curs_set(1);
     nodelay(active_win, FALSE);
+    int i;
+    for(i = 0; i<299; ++i){
+        command[i] = '\0';
+    }
+    
     mvwgetstr(command_win, 1, 1, command);
+    command[299] = '\0';
+    command_message = parser(command);
+    
     nodelay(active_win, TRUE);
     curs_set(0);
     cbreak();
@@ -341,7 +348,7 @@ void get_command(){
 }
 
 void print_command_message(char* message){
-    mvwprintw(command_win, 5, 1, "%s", message);
+    mvwprintw(command_win, 6, 1, "%s", message);
 }
 
 void add_message(char* message, int msg_type){      

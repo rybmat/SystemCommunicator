@@ -12,8 +12,26 @@
 extern "C" {
 #endif
 
+#include <string.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <signal.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "protocol.h"
+    
+    
+char* parser(char* command);
 
+int init();
 
+char* logout();
+
+char* msg_snd(char* reciver, char* msg);
+
+char* enter_channel(char* channel_name);
 
 #ifdef	__cplusplus
 }
