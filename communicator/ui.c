@@ -5,6 +5,10 @@ int all_msg_num = 0;
 int priv_msg_num = 0;
 int room_msg_num = 0;
 
+//ilość wyświetatlanych kontaktow danego typu
+int room_cnt_num = 0;
+int ppl_cnt_num = 0;
+
 //liczba lini mozliwych do zadrukowania i iterator po tablicy z trescia dla okienka wiadomosci
 int recived_lines = RECIVED_HEIGHT - 2;
 int recived_iter;
@@ -17,17 +21,20 @@ int contacts_lines = CONTACTS_HEIGHT - 2;
  char* msg_title;
  char* cnt_title;
  
+ //komunikat wyswietlany w oknie komend
  char* command_message;
 
-void ui_main(){	
-    
+ //licznik uzywany przy wysylaniu zapytan o liste kontaktow i pokoi
+ int counter = 0; 
+
+void ui_main(){	  
         all_msg_num = 0;
         priv_msg_num = 0;
         room_msg_num = 0;
     
     //poczatek rysowania okienek
         int startx = 1;
-        int starty = 1;
+        int starty = 2;
 	
         //wcisniety klawisz klawiatury
         int c;
@@ -36,9 +43,6 @@ void ui_main(){
         int active_window = 0;
         int active_contacts = 0;
         int active_messages = 0;
-        
-        //zmienna wyjscia z glownej petli
-        short exit = 0;
        
         init_strings();
         
@@ -50,7 +54,7 @@ void ui_main(){
     //tworzenie okienek
 	recived_win = newwin(RECIVED_HEIGHT, RECIVED_WIDTH, starty, startx);
         contacts_win = newwin(CONTACTS_HEIGHT, CONTACTS_WIDTH, starty, startx + RECIVED_WIDTH);
-        command_win = newwin(COMMAND_HEIGHT, COMMAND_WIDTH, starty + RECIVED_HEIGHT, startx);        
+        command_win = newwin(COMMAND_HEIGHT, COMMAND_WIDTH, starty + RECIVED_HEIGHT, startx);      
         
      //wybor aktywnych okien   
         active_win = recived_win;
@@ -65,12 +69,16 @@ void ui_main(){
         print_content(recived_win, msg_title, active_msg, recived_iter, recived_lines);
         print_content(contacts_win, cnt_title, active_cnt, contacts_iter, contacts_lines);
         command_window_drawing(command_win, "Command");	      
-        
+ //DO WYRZUCENIA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!       
+         cpy_cnt_tables();
+         
+//////////////////////////////////////////////////////////////////////////        
         curs_set(0);
         //petla glowna
 	while(1){
 		keypad(active_win, TRUE);
                 nodelay(active_win, TRUE);
+                process_ipc_msgs();
                 c = wgetch(active_win);
 		switch(c){//sprawdza ktory klawisz wcisnieto
 			case KEY_UP://w gore (przesuwanie tresci)
@@ -111,12 +119,12 @@ void ui_main(){
                                     case CONTACTS:                                     
                                         switch(active_contacts){
                                             case CONTACTS_PEOPLE:
-                                                if(contacts_iter + contacts_lines <= sizeof(people_contacts)/sizeof(char*)){
+                                                if(contacts_iter + contacts_lines <= ppl_cnt_num){
                                                         contacts_iter++;
                                                 }
                                                 break;
                                             case CONTACTS_ROOMS:
-                                                if(contacts_iter + contacts_lines <= sizeof(rooms_contacts)/sizeof(char*)){
+                                                if(contacts_iter + contacts_lines <= room_cnt_num){
                                                         contacts_iter++;
                                                 }
                                                 break;
@@ -168,15 +176,14 @@ void ui_main(){
                                             case CONTACTS_PEOPLE:                                               
                                                 active_cnt = people_contacts;
                                                 cnt_title = "People";
-                                                contacts_iter = sizeof(people_contacts)/sizeof(char*) - contacts_lines;
+                                                contacts_iter = 0;
                                                 break;
                                             case CONTACTS_ROOMS:                                              
                                                 active_cnt = rooms_contacts;
-                                                cnt_title = "Rooms";
-                                                contacts_iter = sizeof(rooms_contacts)/sizeof(char*) - contacts_lines;
+                                                cnt_title = "Channels";
+                                                contacts_iter = 0;
                                                 break;
-                                        }
-                                        
+                                        }                                     
                                         break;
                                 }
                             break;
@@ -225,13 +232,13 @@ void ui_main(){
                                                 
                                                 active_cnt = people_contacts;
                                                 cnt_title = "People";
-                                                contacts_iter = sizeof(people_contacts)/sizeof(char*) - contacts_lines;
+                                                contacts_iter = 0;
                                                 break;
                                             case CONTACTS_ROOMS:
                                                 
                                                 active_cnt = rooms_contacts;
-                                                cnt_title = "Rooms";
-                                                contacts_iter = sizeof(rooms_contacts)/sizeof(char*) - contacts_lines;
+                                                cnt_title = "Channels";
+                                                contacts_iter = 0;
                                                 
                                                 break;
                                         }
@@ -256,9 +263,13 @@ void ui_main(){
                             }
                             break;
 		}
+                //wyswietlanie tresci
+                mvprintw(1,1,"Username: %s\tChannel: %s", get_nick(), get_channel());
+                refresh();
                 print_content(recived_win, msg_title, active_msg, recived_iter, recived_lines);
                 print_content(contacts_win, cnt_title, active_cnt, contacts_iter, contacts_lines);
                 command_window_drawing(command_win, "Command");
+                //wyjscie z petli jezeli wpisano komende logout
                 if(command_message != NULL){
                         print_command_message(command_message);
                         if(strcmp(command_message, "logged out") == 0){	
@@ -338,7 +349,7 @@ void get_command(){
     
     mvwgetstr(command_win, 1, 1, command);
     command[299] = '\0';
-    command_message = parser(command);
+    command_message = parser(command, people_contacts, rooms_contacts);
     
     nodelay(active_win, TRUE);
     curs_set(0);
@@ -353,7 +364,7 @@ void print_command_message(char* message){
 
 void add_message(char* message, int msg_type){      
     int i;
-    
+    //wszystkie wiadomosci
     if(all_msg_num < MSG_BUF_SIZE){
         all_messages[all_msg_num] = (char*)malloc(sizeof(char) * (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10));
         strcpy(all_messages[all_msg_num], message);
@@ -415,5 +426,91 @@ void add_message(char* message, int msg_type){
         if(recived_iter < 0){
             recived_iter = 0;
         }
+    }
+}
+
+void cpy_cnt_tables(){
+    
+    int k;
+    
+    for(k = 0; k < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER; ++k){
+        people_contacts[k] = NULL;
+        rooms_contacts[k] = NULL;
+    }
+    
+    people_contacts[0] = (char*)malloc(USER_NAME_MAX_LENGTH * sizeof(char));
+    strncpy(people_contacts[0], "abcd",4); 
+    people_contacts[0][4] = '\0';
+    
+    people_contacts[1] = (char*)malloc(USER_NAME_MAX_LENGTH * sizeof(char));
+    strncpy(people_contacts[1], "bcda",4);
+    people_contacts[1][4] = '\0';
+    
+    ppl_cnt_num = 2;
+}
+
+void process_ipc_msgs(){
+    MSG_CHAT_MESSAGE chmsg;
+    MSG_USERS_LIST ulist;
+    
+    counter++;
+    
+    int i, k;
+     //nowa wiadomosc
+    if(msgrcv(get_my_que_id(), &chmsg, sizeof(MSG_CHAT_MESSAGE) - sizeof(long), MESSAGE, IPC_NOWAIT) != -1){
+        char *m = (char*)malloc(sizeof(char) * (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10));
+        for(i = 0; i < (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10); ++i){
+            m[i] = '\0';
+        }
+        strcat(m, chmsg.send_time);
+        strcat(m, " ");
+        strcat(m, chmsg.sender);
+        strcat(m, " ");
+        strcat(m, chmsg.message);
+        add_message(m, chmsg.msg_type);
+    }
+    
+    //lista userow
+    if(msgrcv(get_my_que_id(), &ulist, sizeof(MSG_USERS_LIST) - sizeof(long), USERS_LIST_STR, IPC_NOWAIT) != -1){ 
+        for(i = 0; i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER; ++i){
+            people_contacts[i] = NULL;
+        }
+        i=0;
+        while(ulist.users[i][0] != '\0' && i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER){
+            people_contacts[i] = (char*)malloc(USER_NAME_MAX_LENGTH * sizeof(char));
+            k = 0;
+            while(ulist.users[i][k] != '\0'){
+               people_contacts[i][k] = ulist.users[i][k];
+               k++;
+            }
+            i++;
+        }
+    }
+    
+    //lista pokoi
+    if(msgrcv(get_my_que_id(), &ulist, sizeof(MSG_USERS_LIST) - sizeof(long), ROOMS_LIST_STR, IPC_NOWAIT) != -1){ 
+        for(i = 0; i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER; ++i){
+            rooms_contacts[i] = NULL;
+        }
+        i=0;
+        while(ulist.users[i][0] != '\0' && i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER){
+            rooms_contacts[i] = (char*)malloc(USER_NAME_MAX_LENGTH * sizeof(char));
+            k = 0;
+            while(ulist.users[i][k] != '\0'){
+                rooms_contacts[i][k] = ulist.users[i][k];
+                k++;
+            }
+            i++;
+        }
+    }
+    
+    //wysyłanie requesta o 
+    if(counter >= 9999){
+        counter = 0;
+        MSG_REQUEST req;
+        req.type = REQUEST;
+        req.request_type = USERS_LIST;
+        strcpy(req.user_name, get_nick());
+        msgsnd(get_serv_que_id(), &req, sizeof(MSG_REQUEST) - sizeof(long), 0);
     }
 }

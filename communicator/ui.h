@@ -85,6 +85,11 @@ void print_command_message(char* message);
 //dodanie nowej wiadomosci do bufora wyswietlanych wiadomosci
 void add_message(char* message, int msg_type);
 
+
+void cpy_cnt_tables();
+
+
+void process_ipc_msgs();
 #ifdef	__cplusplus
 }
 #endif
