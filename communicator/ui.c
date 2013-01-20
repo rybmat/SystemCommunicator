@@ -69,10 +69,7 @@ void ui_main(){
         print_content(recived_win, msg_title, active_msg, recived_iter, recived_lines);
         print_content(contacts_win, cnt_title, active_cnt, contacts_iter, contacts_lines);
         command_window_drawing(command_win, "Command");	      
- //DO WYRZUCENIA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!       
-         cpy_cnt_tables();
-         
-//////////////////////////////////////////////////////////////////////////        
+       
         curs_set(0);
         //petla glowna
 	while(1){
@@ -349,7 +346,7 @@ void get_command(){
     
     mvwgetstr(command_win, 1, 1, command);
     command[299] = '\0';
-    command_message = parser(command, people_contacts, rooms_contacts);
+    command_message = parser(command, people_contacts);
     
     nodelay(active_win, TRUE);
     curs_set(0);
@@ -429,26 +426,6 @@ void add_message(char* message, int msg_type){
     }
 }
 
-void cpy_cnt_tables(){
-    
-    int k;
-    
-    for(k = 0; k < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER; ++k){
-        people_contacts[k] = NULL;
-        rooms_contacts[k] = NULL;
-    }
-    
-    people_contacts[0] = (char*)malloc(USER_NAME_MAX_LENGTH * sizeof(char));
-    strncpy(people_contacts[0], "abcd",4); 
-    people_contacts[0][4] = '\0';
-    
-    people_contacts[1] = (char*)malloc(USER_NAME_MAX_LENGTH * sizeof(char));
-    strncpy(people_contacts[1], "bcda",4);
-    people_contacts[1][4] = '\0';
-    
-    ppl_cnt_num = 2;
-}
-
 void process_ipc_msgs(){
     MSG_CHAT_MESSAGE chmsg;
     MSG_USERS_LIST ulist;
@@ -456,7 +433,7 @@ void process_ipc_msgs(){
     counter++;
     
     int i, k;
-     //nowa wiadomosc
+    //odbiór nowej wiadomosci
     if(msgrcv(get_my_que_id(), &chmsg, sizeof(MSG_CHAT_MESSAGE) - sizeof(long), MESSAGE, IPC_NOWAIT) != -1){
         char *m = (char*)malloc(sizeof(char) * (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10));
         for(i = 0; i < (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10); ++i){
@@ -470,11 +447,12 @@ void process_ipc_msgs(){
         add_message(m, chmsg.msg_type);
     }
     
-    //lista userow
+    //odbior listy userow
     if(msgrcv(get_my_que_id(), &ulist, sizeof(MSG_USERS_LIST) - sizeof(long), USERS_LIST_STR, IPC_NOWAIT) != -1){ 
         for(i = 0; i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER; ++i){
             people_contacts[i] = NULL;
         }
+        ppl_cnt_num = 0;
         i=0;
         while(ulist.users[i][0] != '\0' && i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER){
             people_contacts[i] = (char*)malloc(USER_NAME_MAX_LENGTH * sizeof(char));
@@ -483,6 +461,7 @@ void process_ipc_msgs(){
                people_contacts[i][k] = ulist.users[i][k];
                k++;
             }
+            ppl_cnt_num++;
             i++;
         }
     }
@@ -492,6 +471,7 @@ void process_ipc_msgs(){
         for(i = 0; i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER; ++i){
             rooms_contacts[i] = NULL;
         }
+        room_cnt_num = 0;
         i=0;
         while(ulist.users[i][0] != '\0' && i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER){
             rooms_contacts[i] = (char*)malloc(USER_NAME_MAX_LENGTH * sizeof(char));
@@ -500,17 +480,22 @@ void process_ipc_msgs(){
                 rooms_contacts[i][k] = ulist.users[i][k];
                 k++;
             }
+            room_cnt_num++;
             i++;
         }
     }
     
-    //wysyłanie requesta o 
-    if(counter >= 9999){
+    //wysyłanie requesta o listy
+    if(counter >= 999){
         counter = 0;
         MSG_REQUEST req;
         req.type = REQUEST;
         req.request_type = USERS_LIST;
         strcpy(req.user_name, get_nick());
         msgsnd(get_serv_que_id(), &req, sizeof(MSG_REQUEST) - sizeof(long), 0);
+        
+        req.request_type = ROOMS_LIST;
+        msgsnd(get_serv_que_id(), &req, sizeof(MSG_REQUEST) - sizeof(long), 0);
     }
 }
+

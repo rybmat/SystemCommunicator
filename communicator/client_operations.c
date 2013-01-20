@@ -83,7 +83,7 @@ int init(){
 return 1;
 }
 
-char* parser(char* command, char** ppl_cnt, char** room_cnt){
+char* parser(char* command, char** ppl_cnt){
     char uname[USER_NAME_MAX_LENGTH];   
     char msg[MAX_MSG_LENGTH]; 
     char rname[ROOM_NAME_MAX_LENGTH];
@@ -115,7 +115,7 @@ char* parser(char* command, char** ppl_cnt, char** room_cnt){
         }
         msg[i+j] = '\0';
         
-        return msg_snd(uname, msg, ppl_cnt, room_cnt);
+        return msg_snd(uname, msg, ppl_cnt);
     }else if(strncmp(command, "logout", 6) == 0){       //wylogowanie z systemu
         logout();    
         return "logged out";
@@ -143,7 +143,7 @@ char* logout(){
  return NULL;
 }
 
-char* msg_snd(char* receiver, char* msg, char** ppl_cnt, char** room_cnt){
+char* msg_snd(char* receiver, char* msg, char** ppl_cnt){
     chmsg.type = MESSAGE;
     chmsg.msg_type = -1;
     

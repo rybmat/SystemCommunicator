@@ -25,8 +25,8 @@ extern "C" {
     
 //parsuje komendy i wywoluje odpowiednie funkcje obslugi
 //zwraca komunikat wyswietlany w oknie komend
-//parametry: komenda, lista kontaktow (ludzi), lista kontatów (pokoje)
-char* parser(char* command, char** ppl_cnt, char** room_cnt);
+//parametry: komenda, lista kontaktow
+char* parser(char* command, char** ppl_cnt);
 
 //tworzy kolejke klienta, pryzjmuje nazwe uzytkownika, loguje do wskazanego serwera
 //zwraca 1 w przypadku powodzenia, 0 w przpadku niepowodzenia
@@ -39,8 +39,8 @@ char* logout();
 //wysyla wiadomosc
 //zwraca komunikat wyswietlany w oknie komend
 //parametry: odbiorca wiadomosci, wiadowosc, lista kontaktow (ludzi), lista kontatów (pokoje)
-//funkcja okresla typ wiadomosci na podstawie list uzytkownikow
-char* msg_snd(char* receiver, char* msg, char** ppl_cnt, char** room_cnt);
+//funkcja okresla typ wiadomosci na podstawie listy uzytkownikow
+char* msg_snd(char* receiver, char* msg, char** ppl_cnt);
 
 //wysyła żądanie wejścia lub zmiany kanału, parametr: nazwa (nowego)kanału
 char* enter_channel(char* channel_name);

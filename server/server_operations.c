@@ -68,8 +68,7 @@ void register_client(){
                     ulist.users[i][2] = 'b'+i%10;
                     ulist.users[i][3] = 'a'+i%10;
                 }
-            }
-            if(req.request_type == ROOMS_LIST){
+            }else if(req.request_type == ROOMS_LIST){
                 printf("rooms list request\n");
                 int i,k;
                 ulist.type = ROOMS_LIST_STR;
@@ -84,7 +83,7 @@ void register_client(){
                 }
             }
             msgsnd(log_in.ipc_num, &ulist, sizeof(MSG_USERS_LIST) - sizeof(long), 0);
-            printf("wyslane\n");
+            printf("wyslane %d\n", ulist.type);
         }
                 
                 

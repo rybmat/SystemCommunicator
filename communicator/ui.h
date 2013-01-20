@@ -16,6 +16,7 @@ extern "C" {
 #include <stdlib.h>
 #include <ncurses.h>
 #include <string.h>
+#include <sys/shm.h>
 #include "protocol.h"
 #include "client_operations.h"
 
@@ -85,10 +86,8 @@ void print_command_message(char* message);
 //dodanie nowej wiadomosci do bufora wyswietlanych wiadomosci
 void add_message(char* message, int msg_type);
 
-
-void cpy_cnt_tables();
-
-
+//odbiera i przetwarza komunikaty odebrane z kolejki zwiazane z odbiorem wiadomości, listami userów i kanałów,
+//okresowo wysyła rządanie o listy userół i kanałów
 void process_ipc_msgs();
 #ifdef	__cplusplus
 }
