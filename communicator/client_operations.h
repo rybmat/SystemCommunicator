@@ -54,6 +54,7 @@ char* get_channel();
 //zwraca id kolejki klienta
 int get_my_que_id();
 
+//zwraca id kolejki serwera
 int get_serv_que_id();
 
 #ifdef	__cplusplus

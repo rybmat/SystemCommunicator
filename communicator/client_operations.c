@@ -73,7 +73,7 @@ int init(){
         
         //serwer nie mogl przyjac usera
         if(response.response_type == LOGIN_FAILED){
-            printf("Logging in failed: %s\n", response.content);
+            printf("Login failed: %s\n", response.content);
             continue;
         }
         
@@ -128,7 +128,9 @@ char* parser(char* command, char** ppl_cnt){
         return enter_channel(rname);
     }
     
-
+    if(strcmp(command, "") == 0){
+        return NULL;
+    }
 return "Wrong command";
 }
 

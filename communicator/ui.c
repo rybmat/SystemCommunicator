@@ -28,6 +28,10 @@ int contacts_lines = CONTACTS_HEIGHT - 2;
  int counter = 0; 
 
 void ui_main(){	  
+    signal(SIGUSR1, refr_recived);
+    signal(SIGUSR2, refr_contacts);
+    signal(SIGALRM, get_contacts_lists);
+    
         all_msg_num = 0;
         priv_msg_num = 0;
         room_msg_num = 0;
@@ -71,6 +75,8 @@ void ui_main(){
         command_window_drawing(command_win, "Command");	      
        
         curs_set(0);
+        
+        alarm(1); //żeby pobralo pierwszy raz listy kontaktow
         //petla glowna
 	while(1){
 		keypad(active_win, TRUE);
@@ -83,11 +89,13 @@ void ui_main(){
                                     case RECIVED:
                                         if(recived_iter > 0){
                                             recived_iter--;
+                                            kill(getpid(), SIGUSR1);
                                         }
                                         break;
                                     case CONTACTS:
                                         if(contacts_iter > 0){
                                             contacts_iter--;
+                                            kill(getpid(), SIGUSR2);
                                         }                                        
                                         break;
                                 }
@@ -112,6 +120,7 @@ void ui_main(){
                                                 }
                                                 break;
                                         }
+                                        kill(getpid(), SIGUSR1);
                                         break;
                                     case CONTACTS:                                     
                                         switch(active_contacts){
@@ -126,6 +135,7 @@ void ui_main(){
                                                 }
                                                 break;
                                         }
+                                        kill(getpid(), SIGUSR2);
                                         break;
                                 }
 				break;
@@ -163,6 +173,7 @@ void ui_main(){
                                                 msg_title = "Room messages";
                                                 break;
                                         }
+                                        kill(getpid(), SIGUSR1);
                                         break;
                                     case CONTACTS:
                                         if(active_contacts == 0){
@@ -180,7 +191,8 @@ void ui_main(){
                                                 cnt_title = "Channels";
                                                 contacts_iter = 0;
                                                 break;
-                                        }                                     
+                                        }
+                                        kill(getpid(), SIGUSR2);
                                         break;
                                 }
                             break;
@@ -218,6 +230,7 @@ void ui_main(){
                                                 msg_title = "Room messages";
                                                 break;
                                         }
+                                        kill(getpid(), SIGUSR1);
                                         break;
                                     case CONTACTS:
                                         if(active_contacts == 0){
@@ -239,6 +252,7 @@ void ui_main(){
                                                 
                                                 break;
                                         }
+                                        kill(getpid(), SIGUSR2);
                                         break;
                                 }
                             break;
@@ -252,8 +266,10 @@ void ui_main(){
                             active_window = (active_window + 1) % 3;
                             switch(active_window){
                                 case RECIVED: active_win = recived_win;
+                                        kill(getpid(), SIGUSR1);
                                         break;
                                 case CONTACTS: active_win = contacts_win;
+                                        kill(getpid(), SIGUSR2);
                                         break;
                                 case COMMANDS: active_win = command_win;
                                         break;
@@ -261,8 +277,8 @@ void ui_main(){
                             break;
 		}
                 //wyswietlanie tresci
-                mvprintw(1,1,"Username: %s\tChannel: %s", get_nick(), get_channel());
-                refresh();
+                //mvprintw(1,1,"Username: %s\tChannel: %s", get_nick(), get_channel());
+                //refresh();
                 print_content(recived_win, msg_title, active_msg, recived_iter, recived_lines);
                 print_content(contacts_win, cnt_title, active_cnt, contacts_iter, contacts_lines);
                 command_window_drawing(command_win, "Command");
@@ -299,7 +315,7 @@ void init_strings(){
 
 void print_content(WINDOW *win, char* title, char** content, int begin, int nlines){
     int x = 1, y = 1, i = 0;
-    wclear(win);
+    //wclear(win);
     box(win,0,0);
     
     //jezeli okno jest aktywne to wyroznia tytul
@@ -424,13 +440,12 @@ void add_message(char* message, int msg_type){
             recived_iter = 0;
         }
     }
+    kill(getpid(), SIGUSR1);
 }
 
 void process_ipc_msgs(){
     MSG_CHAT_MESSAGE chmsg;
     MSG_USERS_LIST ulist;
-    
-    counter++;
     
     int i, k;
     //odbiór nowej wiadomosci
@@ -440,9 +455,9 @@ void process_ipc_msgs(){
             m[i] = '\0';
         }
         strcat(m, chmsg.send_time);
-        strcat(m, " ");
+        strcat(m, " <");
         strcat(m, chmsg.sender);
-        strcat(m, " ");
+        strcat(m, "> ");
         strcat(m, chmsg.message);
         add_message(m, chmsg.msg_type);
     }
@@ -464,6 +479,7 @@ void process_ipc_msgs(){
             ppl_cnt_num++;
             i++;
         }
+        kill(getpid(), SIGUSR2);
     }
     
     //lista pokoi
@@ -483,11 +499,23 @@ void process_ipc_msgs(){
             room_cnt_num++;
             i++;
         }
+        kill(getpid(), SIGUSR2);
     }
-    
-    //wysyłanie requesta o listy
-    if(counter >= 999){
-        counter = 0;
+}
+
+void refr_recived(){
+    wclear(recived_win);
+    box(recived_win,0,0);
+    wrefresh(recived_win);
+}
+
+void refr_contacts(){
+    wclear(contacts_win);
+    box(contacts_win,0,0);
+    wrefresh(contacts_win);
+}
+
+void get_contacts_lists(){
         MSG_REQUEST req;
         req.type = REQUEST;
         req.request_type = USERS_LIST;
@@ -496,6 +524,6 @@ void process_ipc_msgs(){
         
         req.request_type = ROOMS_LIST;
         msgsnd(get_serv_que_id(), &req, sizeof(MSG_REQUEST) - sizeof(long), 0);
-    }
+        
+        alarm(GETTING_CONTACTS_TIME_INTERVAL);
 }
-

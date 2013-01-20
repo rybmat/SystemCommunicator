@@ -76,10 +76,10 @@ void register_client(){
                     for(k = 0; k < USER_NAME_MAX_LENGTH; ++k){
                         ulist.users[i][k] = '\0';
                     }
-                    ulist.users[i][0] = 'r'%10;
-                    ulist.users[i][1] = '0'%10;
-                    ulist.users[i][2] = '0'%10;
-                    ulist.users[i][3] = 'm'%10;
+                    ulist.users[i][0] = 'r'+i%10;
+                    ulist.users[i][1] = '0'+i%10;
+                    ulist.users[i][2] = '0'+i%10;
+                    ulist.users[i][3] = 'm'+i%10;
                 }
             }
             msgsnd(log_in.ipc_num, &ulist, sizeof(MSG_USERS_LIST) - sizeof(long), 0);

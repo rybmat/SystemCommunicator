@@ -17,6 +17,7 @@ extern "C" {
 #include <ncurses.h>
 #include <string.h>
 #include <sys/shm.h>
+#include <signal.h>
 #include "protocol.h"
 #include "client_operations.h"
 
@@ -39,8 +40,12 @@ extern "C" {
 #define MESSAGES_ALL 0
 #define MESSAGES_PRIV 1
 #define MESSAGES_ROOM 2
+
+//ilosc wiadomosci pamietanych w programie    
+#define MSG_BUF_SIZE 200
     
-#define MSG_BUF_SIZE 100
+//odstep czasowy (sec) pomiedzy odswiezaniem kontaktow
+#define GETTING_CONTACTS_TIME_INTERVAL 2    
 
 //tablice ostatnich 100 wiadomosci (prywatnych, publicznych, wszystkich)
 char *priv_messages[MSG_BUF_SIZE];
@@ -89,6 +94,16 @@ void add_message(char* message, int msg_type);
 //odbiera i przetwarza komunikaty odebrane z kolejki zwiazane z odbiorem wiadomości, listami userów i kanałów,
 //okresowo wysyła rządanie o listy userół i kanałów
 void process_ipc_msgs();
+
+//procedura obslugi sygnalu SIGUSR1 - na ten sygnal odswiezane jest okienko wiadomosci
+void refr_recived();
+
+//procedura obslugi sygnalu SIGUSR2 - na ten sygnal odswiezane jest okienko kontaktow
+void refr_contacts();
+
+//procedura obslugi sygnalu SIGALRM - na ten sygnal wysylane jest zadanie do serwera o listy kontaktow
+//sygnal ten wysylany jest co GETTING_CONTACTS_TIME_INTERVAL sekund
+void get_contacts_lists();
 #ifdef	__cplusplus
 }
 #endif
