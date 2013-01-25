@@ -1,3 +1,6 @@
+
+#include "protocol.h"
+
 #include "ui.h"
 
 //ilość wyswietlanych wiadomosci posczegolnego typu
@@ -22,6 +25,7 @@ int contacts_lines = CONTACTS_HEIGHT - 2;
  char* cnt_title;
  
  //komunikat wyswietlany w oknie komend
+ char command_message2[RESPONSE_LENGTH * 2];
  char* command_message;
 
  //licznik uzywany przy wysylaniu zapytan o liste kontaktow i pokoi
@@ -82,6 +86,7 @@ void ui_main(){
 		keypad(active_win, TRUE);
                 nodelay(active_win, TRUE);
                 process_ipc_msgs();
+                process_server_responses();
                 c = wgetch(active_win);
 		switch(c){//sprawdza ktory klawisz wcisnieto
 			case KEY_UP://w gore (przesuwanie tresci)
@@ -277,8 +282,12 @@ void ui_main(){
                             break;
 		}
                 //wyswietlanie tresci
-                //mvprintw(1,1,"Username: %s\tChannel: %s", get_nick(), get_channel());
-                //refresh();
+                if(get_channel() != NULL){
+                    mvprintw(1,1,"Username: %s\tChannel: %s", get_nick(), get_channel());
+                }else{
+                    mvprintw(1,1,"Username: %s\tChannel: ", get_nick());
+                }
+                refresh();
                 print_content(recived_win, msg_title, active_msg, recived_iter, recived_lines);
                 print_content(contacts_win, cnt_title, active_cnt, contacts_iter, contacts_lines);
                 command_window_drawing(command_win, "Command");
@@ -399,6 +408,10 @@ void add_message(char* message, int msg_type){
    
     //wiadomosc pokoju
     if(msg_type == PUBLIC){
+        FILE *f = fopen(get_channel_messages_file_name(),"a");
+        fprintf(f,"%s\n",message);
+        fclose(f);
+        
         if(room_msg_num < MSG_BUF_SIZE){
             room_messages[room_msg_num] = (char*)malloc(sizeof(char) * (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10));
             strcpy(room_messages[room_msg_num], message);
@@ -420,7 +433,11 @@ void add_message(char* message, int msg_type){
     }
     
     //wiadomosc prywatna
-    if(msg_type == PRIVATE){      
+    if(msg_type == PRIVATE){
+        FILE *f = fopen(get_private_messages_file_name(),"a");
+        fprintf(f,"%s\n",message);
+        fclose(f);
+        
         if(priv_msg_num < MSG_BUF_SIZE){
             priv_messages[priv_msg_num] = (char*)malloc(sizeof(char) * (MAX_MSG_LENGTH + USER_NAME_MAX_LENGTH +10));
             strcpy(priv_messages[priv_msg_num], message);
@@ -500,6 +517,57 @@ void process_ipc_msgs(){
             i++;
         }
         kill(getpid(), SIGUSR2);
+    }
+}
+
+void process_server_responses(){
+    MSG_RESPONSE resp;
+    if(msgrcv(get_my_que_id(), &resp, sizeof(MSG_RESPONSE) - sizeof(long), RESPONSE, IPC_NOWAIT) != -1){
+        if(resp.response_type == PING){
+            MSG_REQUEST req;
+            req.type = REQUEST;
+            req.request_type = PONG;
+            strcpy(req.user_name, get_nick());
+            msgsnd(get_serv_que_id(), &req, sizeof(MSG_REQUEST) - sizeof(long), 0);
+        }
+        if(resp.response_type == MSG_SEND){
+            
+        }
+        if(resp.response_type == MSG_NOT_SEND){
+            int i;
+            for (i = 0; i < RESPONSE_LENGTH * 2; ++i){
+                command_message2[i] = '\0';
+            }
+            strcpy(command_message2, "Message not send: ");
+            strcat(command_message2, resp.content);
+            print_command_message(command_message2);
+            
+        }
+        if((resp.response_type == ENTERED_ROOM_SUCCESS) || (resp.response_type == CHANGE_ROOM_SUCCESS)){
+            int i;
+            for(i = 0; i < RESPONSE_LENGTH * 2; ++i){
+                command_message2[i] = '\0';
+            }
+            strcpy(get_channel(), get_temp_channel());
+            strcpy(command_message2, "You've just entered to channel ");
+            strcat(command_message2, get_temp_channel());
+            print_command_message(command_message2);
+        }
+        if((resp.response_type == ENTERED_ROOM_FAILED) || (resp.response_type == CHANGE_ROOM_FAILED)){
+            int i;
+            for (i = 0; i < RESPONSE_LENGTH * 2; ++i){
+                command_message2[i] = '\0';
+            }
+            strcpy(command_message2, "Entering to channel failed: ");
+            strcat(command_message2, resp.content);
+            print_command_message(command_message2);
+        } 
+        if(resp.response_type == LEAVE_ROOM_SUCCESS){
+            
+        }
+        if(resp.response_type == LEAVE_ROOM_FAILED){
+            
+        }
     }
 }
 

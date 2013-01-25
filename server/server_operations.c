@@ -43,14 +43,26 @@ void register_client(){
         }
         //wiadomosc
         if(msgrcv(que_id, &chmsg, sizeof(MSG_CHAT_MESSAGE) - sizeof(long), MESSAGE, IPC_NOWAIT) != -1){
+            response.type = RESPONSE;
+            response.response_type = MSG_SEND;
+            strcpy(response.content, "Message Send");
             printf("message:\n Nadawca: %s\n czas: %s\n tresc: %s\n", chmsg.sender, chmsg.send_time, chmsg.message);
+            msgsnd(log_in.ipc_num, &response, sizeof(MSG_RESPONSE) - sizeof(long), 0);
         }
         //operacje z pokojem
         if(msgrcv(que_id, &room, sizeof(MSG_ROOM) - sizeof(long), ROOM, IPC_NOWAIT) != -1){
             if(room.operation_type == ENTER_ROOM){
                 printf("ENTER_ROOM: %s -> %s\n", room.user_name, room.room_name);
+                response.type = RESPONSE;
+                response.response_type = ENTERED_ROOM_SUCCESS;
+                strcpy(response.content, "Entered room");
+                msgsnd(log_in.ipc_num, &response, sizeof(MSG_RESPONSE) - sizeof(long), 0);
             }else if(room.operation_type == CHANGE_ROOM){
                 printf("CHANGE_ROOM: %s -> %s\n", room.user_name, room.room_name);
+                response.type = RESPONSE;
+                response.response_type = CHANGE_ROOM_SUCCESS;
+                strcpy(response.content, "Changed room");
+                msgsnd(log_in.ipc_num, &response, sizeof(MSG_RESPONSE) - sizeof(long), 0);
             }
         }
         //request o liste userow

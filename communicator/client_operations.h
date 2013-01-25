@@ -51,11 +51,21 @@ char* get_nick();
 //zwraca nazwe aktualnego kanalu
 char* get_channel();
 
+//zwraca temp_channel - nazwe kanalu do ktorego user chce wejsc
+char* get_temp_channel();
+
 //zwraca id kolejki klienta
 int get_my_que_id();
 
 //zwraca id kolejki serwera
 int get_serv_que_id();
+
+//zwraca nazwe pliku z wiadomosciami prywatnymi
+char* get_private_messages_file_name();
+
+//zwraca nazwe pliku z wiadomosciami pokoju    
+char* get_channel_messages_file_name();
+
 
 #ifdef	__cplusplus
 }

@@ -1,10 +1,19 @@
 #include "client_operations.h"
 
-
+//id kolejek swojej i servera
 int my_que_id = 0;
 int serv_que_id = 0;
+
+//nazwa usera
 char nick[USER_NAME_MAX_LENGTH];
+
+//nazwa kanalu w ktorym jest user i nazwa kanalu do ktorego user chce wejsc
 char *channel = NULL;
+char *temp_channel = NULL;
+
+//nazwy plikow z historiami wiadomosci
+char private_messages_file_name[35];
+char channel_messages_file_name[35];
 
 //struktury uzywane przy kolejkach komunikatow
 MSG_CHAT_MESSAGE chmsg;
@@ -17,11 +26,20 @@ char* get_nick(){
 char* get_channel(){
     return channel;
 }
+char* get_temp_channel(){
+    return temp_channel;
+}
 int get_my_que_id(){
     return my_que_id;
 }
 int get_serv_que_id(){
     return serv_que_id;
+}
+char* get_private_messages_file_name(){
+    return private_messages_file_name;
+}
+char* get_channel_messages_file_name(){
+    return channel_messages_file_name;
 }
 
 int init(){
@@ -79,6 +97,31 @@ int init(){
         
     }while(response.response_type != LOGIN_SUCCESS);
     printf("have a lot of fun..\n");
+  
+  //tworzenie plikow do wiadomosci;
+    time_t t = time(NULL);
+    char *time_str = ctime(&t);
+    
+    for(i = 0; i < 35; ++i){
+        private_messages_file_name[i] = '\0';
+        channel_messages_file_name[i] = '\0';
+    }
+    private_messages_file_name[24] = '\0';
+    channel_messages_file_name[24] = '\0';
+    
+    strcat(private_messages_file_name, time_str);
+    strcat(private_messages_file_name, " PRV.txt");
+    
+    strcat(channel_messages_file_name, time_str);
+    strcat(channel_messages_file_name, " CHN.txt");
+    
+    FILE *f=NULL;
+    f = fopen(private_messages_file_name, "a");
+    fclose(f);
+    
+    FILE *f2=NULL;
+    f2 = fopen(channel_messages_file_name, "a");
+    fclose(f2);
     
 return 1;
 }
@@ -177,6 +220,9 @@ char* msg_snd(char* receiver, char* msg, char** ppl_cnt){
     //typu wiadomosci
 
     if(strcmp(receiver, "channel") == 0){
+        if(channel == NULL){
+            return "You haven't entered to any channel yet";
+        }
         chmsg.msg_type = PUBLIC;
     }else{
         for(i = 0; i < MAX_SERVERS_NUMBER * MAX_USERS_NUMBER; ++i){
@@ -191,7 +237,7 @@ char* msg_snd(char* receiver, char* msg, char** ppl_cnt){
     
     //jesli nie znaleziono adresata na liscie
     if(chmsg.msg_type == -1){
-        return "There is no such person or room";
+        return "There is no such person";
     }
     
     //wyslanie wiadomosci do serwera i do samego siebie (zeby pojawiala sie w oknie wiadomosci)
@@ -214,7 +260,11 @@ char* enter_channel(char* channel_name){
         for(i = 0; i < ROOM_NAME_MAX_LENGTH; ++i){
             channel[i] = '\0';
         }
-        //strcpy(channel, channel_name);
+        temp_channel = (char*)malloc(ROOM_NAME_MAX_LENGTH * sizeof(char));
+        for(i = 0; i < ROOM_NAME_MAX_LENGTH; ++i){
+            channel[i] = '\0';
+        }
+        strcpy(temp_channel, channel_name);
         msgroom.operation_type = ENTER_ROOM;
         msgsnd(serv_que_id, &msgroom, sizeof(MSG_ROOM) - sizeof(long), 0);
     }else if(strcmp(channel_name, channel) == 0){ //jezeli juz jest w tym pokoju 
@@ -222,9 +272,9 @@ char* enter_channel(char* channel_name){
     }else{ //zmiana pokoju
         channel = (char*)malloc(ROOM_NAME_MAX_LENGTH * sizeof(char));
         for(i = 0; i < ROOM_NAME_MAX_LENGTH; ++i){
-            channel[i] = '\0';
+            temp_channel[i] = '\0';
         }
-        strcpy(channel, channel_name);
+        strcpy(temp_channel, channel_name);
         msgroom.operation_type = CHANGE_ROOM;
         msgsnd(serv_que_id, &msgroom, sizeof(MSG_ROOM) - sizeof(long), 0);
     }

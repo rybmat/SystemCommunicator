@@ -1,4 +1,4 @@
-/* 
+/**
  * File:   ui.h
  * Author: mateusz
  *
@@ -94,6 +94,9 @@ void add_message(char* message, int msg_type);
 //odbiera i przetwarza komunikaty odebrane z kolejki zwiazane z odbiorem wiadomości, listami userów i kanałów,
 //okresowo wysyła rządanie o listy userół i kanałów
 void process_ipc_msgs();
+
+//przetwarza odpowiedzi otrzymane od serwera
+void process_server_responses();
 
 //procedura obslugi sygnalu SIGUSR1 - na ten sygnal odswiezane jest okienko wiadomosci
 void refr_recived();
