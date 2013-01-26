@@ -1,6 +1,4 @@
-
 #include "protocol.h"
-
 #include "ui.h"
 
 //ilość wyswietlanych wiadomosci posczegolnego typu
@@ -30,7 +28,18 @@ int contacts_lines = CONTACTS_HEIGHT - 2;
 
  //licznik uzywany przy wysylaniu zapytan o liste kontaktow i pokoi
  int counter = 0; 
+ 
+ //PID procesu przetwarzającego heartbeat
+ int child_pid;
 
+ int get_child_pid(){
+     return child_pid;
+ }
+ 
+ void set_child_pid(int pid){
+     child_pid = pid;
+ }
+ 
 void ui_main(){	  
     signal(SIGUSR1, refr_recived);
     signal(SIGUSR2, refr_contacts);
@@ -283,6 +292,7 @@ void ui_main(){
 		}
                 //wyswietlanie tresci
                 if(get_channel() != NULL){
+                    mvprintw(1,1,"                                                     ");
                     mvprintw(1,1,"Username: %s\tChannel: %s", get_nick(), get_channel());
                 }else{
                     mvprintw(1,1,"Username: %s\tChannel: ", get_nick());
@@ -295,7 +305,8 @@ void ui_main(){
                 if(command_message != NULL){
                         print_command_message(command_message);
                         if(strcmp(command_message, "logged out") == 0){	
-                                break;
+                            kill(child_pid, SIGTERM);    
+                            break;
                         }
                 }
 	}
@@ -360,6 +371,8 @@ void command_window_drawing(WINDOW *win, char* title){
 }
 
 void get_command(){
+    kill(child_pid, SIGCONT);
+    
     echo();
     nocbreak();
     curs_set(1);
@@ -378,6 +391,8 @@ void get_command(){
     cbreak();
     noecho();
     wclear(command_win);
+    
+    kill(child_pid, SIGSTOP);
 }
 
 void print_command_message(char* message){
@@ -568,6 +583,21 @@ void process_server_responses(){
         if(resp.response_type == LEAVE_ROOM_FAILED){
             
         }
+    }
+}
+
+void process_heartbeat(){
+    MSG_RESPONSE resp;
+    if(msgrcv(get_my_que_id(), &resp, sizeof(MSG_RESPONSE) - sizeof(long), RESPONSE, IPC_NOWAIT) != -1){
+        if(resp.response_type == PING){
+            MSG_REQUEST req;
+            req.type = REQUEST;
+            req.request_type = PONG;
+            strcpy(req.user_name, get_nick());
+            msgsnd(get_serv_que_id(), &req, sizeof(MSG_REQUEST) - sizeof(long), 0);
+        }else{
+            msgsnd(get_my_que_id(), &resp, sizeof(MSG_RESPONSE) - sizeof(long), 0);
+        }        
     }
 }
 

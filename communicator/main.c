@@ -16,16 +16,26 @@
  */
 int main(int argc, char** argv) {
     
-    /*char cmd[300];
-    gets(cmd);
-    parser(cmd);
-    */
     
     if(init() == 0){
         printf("Something went wrong, sorry...");
         return 0;
     }
-    ui_main();
+    
+    int p = fork();
+    if(p == 0){
+        while(1){
+            process_heartbeat();
+        }
+    }else{
+        if(p == -1){
+            logout();
+            return 1;
+        }
+        kill(p, SIGSTOP);
+        set_child_pid(p);
+        ui_main();  
+    }
     
     return (EXIT_SUCCESS);
 }

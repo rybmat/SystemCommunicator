@@ -13,14 +13,21 @@ int que_id = 0;
 int init(){
     que_id = msgget(IPC_PRIVATE, 0666);
     if(que_id <= 0){
+        printf("blad\n");
         return 0;
     }
+    
+    log_in.ipc_num = -1;
+    
+    signal(SIGALRM, heartbeat);
     
     printf("server id: %d\n",que_id);
     return 1;
 }
 
 void register_client(){
+    
+    alarm(3);
     do{ //rzadanie zalogowania
         if(msgrcv(que_id, &log_in, sizeof(MSG_LOGIN) - sizeof(long), LOGIN, IPC_NOWAIT) != -1){
             printf("logged in:\nclient queue: %d\n client nick: %s\n", log_in.ipc_num, log_in.username);
@@ -80,6 +87,8 @@ void register_client(){
                     ulist.users[i][2] = 'b'+i%10;
                     ulist.users[i][3] = 'a'+i%10;
                 }
+                msgsnd(log_in.ipc_num, &ulist, sizeof(MSG_USERS_LIST) - sizeof(long), 0);
+                printf("wyslane %d\n", ulist.type);
             }else if(req.request_type == ROOMS_LIST){
                 printf("rooms list request\n");
                 int i,k;
@@ -93,15 +102,30 @@ void register_client(){
                     ulist.users[i][2] = '0'+i%10;
                     ulist.users[i][3] = 'm'+i%10;
                 }
+                msgsnd(log_in.ipc_num, &ulist, sizeof(MSG_USERS_LIST) - sizeof(long), 0);
+                printf("wyslane %d\n", ulist.type);
+            }else if(req.request_type == PONG){
+                printf("PONG\n");
             }
-            msgsnd(log_in.ipc_num, &ulist, sizeof(MSG_USERS_LIST) - sizeof(long), 0);
-            printf("wyslane %d\n", ulist.type);
+            
         }
                 
                 
-    }while(1);
-    
-    
-    
+    }while(1);    
    
+}
+
+void heartbeat(){
+    MSG_RESPONSE rs;
+    rs.response_type = PING;
+    rs.type = RESPONSE;
+    
+    
+    if(log_in.ipc_num != -1){
+        if(msgsnd(log_in.ipc_num, &rs, sizeof(MSG_RESPONSE) - sizeof(long), 0) != -1){
+                printf("PING\n");
+        }
+    }
+    
+    alarm(3);
 }

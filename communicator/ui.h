@@ -45,7 +45,7 @@ extern "C" {
 #define MSG_BUF_SIZE 200
     
 //odstep czasowy (sec) pomiedzy odswiezaniem kontaktow
-#define GETTING_CONTACTS_TIME_INTERVAL 2    
+#define GETTING_CONTACTS_TIME_INTERVAL 4    
 
 //tablice ostatnich 100 wiadomosci (prywatnych, publicznych, wszystkich)
 char *priv_messages[MSG_BUF_SIZE];
@@ -95,8 +95,11 @@ void add_message(char* message, int msg_type);
 //okresowo wysyła rządanie o listy userół i kanałów
 void process_ipc_msgs();
 
-//przetwarza odpowiedzi otrzymane od serwera
+//przetwarza odpowiedzi otrzymane od serwera włącznie z heartbeat
 void process_server_responses();
+
+//przetwarza heartbeat w czasie wpisywania komendy w okienku komendy
+void process_heartbeat();
 
 //procedura obslugi sygnalu SIGUSR1 - na ten sygnal odswiezane jest okienko wiadomosci
 void refr_recived();
@@ -104,7 +107,7 @@ void refr_recived();
 //procedura obslugi sygnalu SIGUSR2 - na ten sygnal odswiezane jest okienko kontaktow
 void refr_contacts();
 
-//procedura obslugi sygnalu SIGALRM - na ten sygnal wysylane jest zadanie do serwera o listy kontaktow
+//procedura obslugi sygnalu SIGALRM - na ten sygnal wysylany jest rquest do serwera o listy kontaktow
 //sygnal ten wysylany jest co GETTING_CONTACTS_TIME_INTERVAL sekund
 void get_contacts_lists();
 #ifdef	__cplusplus
