@@ -12,10 +12,18 @@
 extern "C" {
 #endif
 
-//klucze semaforow    
+//klucze semaforow (dla semget)   
 #define SEM_SERVER_IDS 35
 #define SEM_USER_SERVER 36
 #define SEM_ROOM_SERVER 37
+#define SEM_LOGFILE 38
+
+//klucze obszarół pamięci współdzielonej (shmget)
+#define SHM_SERVER_IDS 15
+#define SHM_USER_SERVER 20
+#define SHM_ROOM_SERVER 25
+    
+    
     
 #define USER_NAME_MAX_LENGTH 10
 #define RESPONSE_LENGTH 50
@@ -24,9 +32,9 @@ extern "C" {
 #define ROOM_NAME_MAX_LENGTH 10
 #define MAX_MSG_LENGTH 256
 
-int server_ids[15]; //pamiec wspoldzielona Obszar 1: przechowuje listę id na których nasłuchują serwery.
+//int server_ids[15]; //pamiec wspoldzielona Obszar 1: przechowuje listę id na których nasłuchują serwery.
 
-//Obszar 2: przechowuje powiązania nazw użytkowników z identyfiktablicy struktur:
+//Obszar 2: przechowuje powiązania nazw użytkowników z identyfiktorami serwerów w postaci tablicy struktur:
 typedef struct {
         char user_name[USER_NAME_MAX_LENGTH];
         int server_id;

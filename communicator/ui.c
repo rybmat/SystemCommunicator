@@ -583,6 +583,15 @@ void process_server_responses(){
         if(resp.response_type == LEAVE_ROOM_FAILED){
             
         }
+        if(resp.response_type == LOGOUT_SUCCESS){
+            logout();
+            command_message = (char*)malloc(15 * sizeof(char));
+            int i;
+            for(i = 0; i < 15; ++i){
+                command_message[i] = '\0';
+            }
+            strcpy(command_message, "logged_out");
+        }
     }
 }
 

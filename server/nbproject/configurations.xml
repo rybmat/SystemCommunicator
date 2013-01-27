@@ -4,7 +4,6 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
-      <itemPath>log_file.h</itemPath>
       <itemPath>protocol.h</itemPath>
       <itemPath>server_operations.h</itemPath>
     </logicalFolder>
@@ -15,7 +14,6 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
-      <itemPath>log_file.c</itemPath>
       <itemPath>main.c</itemPath>
       <itemPath>server_operations.c</itemPath>
     </logicalFolder>

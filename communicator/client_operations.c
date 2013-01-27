@@ -222,6 +222,11 @@ char* msg_snd(char* receiver, char* msg, char** ppl_cnt){
     if(strcmp(receiver, "channel") == 0){
         if(channel == NULL){
             return "You haven't entered to any channel yet";
+        }else{
+            for(i = 0; i < USER_NAME_MAX_LENGTH; ++i){
+                chmsg.receiver[i] = '\0';
+            }
+            strcpy(chmsg.receiver, channel);
         }
         chmsg.msg_type = PUBLIC;
     }else{

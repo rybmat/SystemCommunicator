@@ -11,12 +11,41 @@
 /*
  * 
  */
+
+int parser(char * command);
+
 int main(int argc, char** argv) {
     
-    if(init()){
-        register_client();
-    }
+    int chpid;
     
-    return (EXIT_SUCCESS);
+    
+        chpid = fork();
+        if(chpid == 0){
+            if(init()){
+                server_main();
+            }
+            exit(0);
+        }else{
+            char command[10];
+            int i;
+            
+            do{
+                for(i = 0; i < 10; ++i){
+                    command[i] = '\0';
+                }
+                gets(command);
+                command[9] = '\0';
+            }while(!parser(command));
+            kill(chpid, SIGTERM);
+            
+        }
+        return (EXIT_SUCCESS);
 }
 
+int parser(char *command){
+    if(strcmp(command, "close") == 0){
+        return 1;
+    }else{
+        return 0;
+    }
+}
