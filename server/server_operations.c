@@ -168,8 +168,7 @@ int init(){
     return 1;
 }
 
-void close_server(){
-    
+void close_server(){   
 //usuniecie wpisu z tablicy serwerów
     int i;
     semop(server_ids_sem_id, &P, 1);
@@ -272,7 +271,6 @@ void server_main(){
         }
      //wiadomości   
         if(msgrcv(que_id, &chmsg, sizeof(MSG_CHAT_MESSAGE) - sizeof(long), MESSAGE, IPC_NOWAIT) != -1){
-            printf("message:\n Nadawca: %s\n Odbiorca: %s\n czas: %s\n tresc: %s\n", chmsg.sender, chmsg.receiver, chmsg.send_time, chmsg.message);
             send_message(chmsg);
         }
      //wejście/wyjście/zmiana pokoju
@@ -336,7 +334,7 @@ void server_main(){
             MSG_SERVER2SERVER serv2serv;
             serv2serv.server_ipc_num = que_id;
             serv2serv.type = SERVER2SERVER;
-            msgsnd(s2s.server_ipc_num, sizeof(MSG_SERVER2SERVER) - sizeof(long), SERVER2SERVER, 0);
+            msgsnd(s2s.server_ipc_num, &serv2serv, sizeof(MSG_SERVER2SERVER) - sizeof(long), 0);
         }
         
     }while(run);
@@ -732,7 +730,7 @@ void send_message(MSG_CHAT_MESSAGE msg){
                 }
                 //wysylanie do wszystkich userow tego serwera bedacych w pokoju
                 for(j = 0; j < MAX_USERS_NUMBER; ++j){
-                    if(strcmp(local_users[j].room, msg.receiver) == 0){
+                    if((strcmp(local_users[j].room, msg.receiver) == 0) && strcmp(local_users[j].username, msg.sender) != 0 ){
                        msgsnd(local_users[j].que_id, &msg, sizeof(MSG_CHAT_MESSAGE) - sizeof(long), IPC_NOWAIT); 
                     }
                 }

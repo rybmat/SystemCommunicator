@@ -24,7 +24,7 @@ extern "C" {
 #define SHM_ROOM_SERVER 25
     
     
-    
+ //różne wielkości   
 #define USER_NAME_MAX_LENGTH 10
 #define RESPONSE_LENGTH 50
 #define MAX_SERVERS_NUMBER 15
