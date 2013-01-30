@@ -125,6 +125,15 @@ int init(){
         }
     }
     
+    if(room_server_sem_id < 0 || user_server_sem_id < 0 || server_ids_sem_id < 0 || logfile_sem_id < 0){
+        printf("blad przy odczycie semaforow\n");
+        return 0;
+    }
+    
+    if(room_server_shm_id < 0 || user_server_shm_id < 0 || server_ids_shm_id < 0){
+        printf("blad przy dostepie do pamieci wspoldzielonej\n");
+        return 0;
+    }
     
 //tworzenie kolejki
     que_id = msgget(IPC_PRIVATE, 0666);
@@ -761,6 +770,7 @@ void send_message(MSG_CHAT_MESSAGE msg){
         }
         response.type = RESPONSE;
         response.response_type = MSG_SEND;
+        strcpy(response.content, "");
         msgsnd(get_client_queue_id(msg.sender), &response, sizeof(MSG_RESPONSE) - sizeof(long), IPC_NOWAIT); 
         
     }else{ //jesli nadawca nie jest z tego serwera

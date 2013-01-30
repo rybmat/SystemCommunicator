@@ -36,10 +36,10 @@ extern "C" {
     
     //struktura reprezentująca jednego użytkownika zalogowanego na serwerze
     typedef struct{
-        char username[USER_NAME_MAX_LENGTH];
-        int que_id;
-        char room[ROOM_NAME_MAX_LENGTH];
-        int heartbeat;
+        char username[USER_NAME_MAX_LENGTH];    //nazwa uzytkownika
+        int que_id;                             //identyfikator kolejki klienta
+        char room[ROOM_NAME_MAX_LENGTH];        //nazwa pokoju do ktorego nalezy uzytkownik
+        int heartbeat;                          //licznik uzywany przy mechanizmie heartbeat
     } LOGGED_USER;
     
     //pobiera id semaforów, pamieci wspoldzielonych, dolacza je, tworzy kolejke komunikatow

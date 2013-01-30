@@ -13,15 +13,15 @@ extern "C" {
 #endif
 
 //klucze semaforow (dla semget)   
-#define SEM_SERVER_IDS 35
-#define SEM_USER_SERVER 36
-#define SEM_ROOM_SERVER 37
-#define SEM_LOGFILE 38
+#define SEM_SERVER_IDS 1              //semafor dla rejestru wszystkich serwerow
+#define SEM_USER_SERVER 2              //semafor dla pamieci powiązań uzytkownik-serwer
+#define SEM_ROOM_SERVER 3              //semafor dla pamieci powiązań pokoj-serwer
+#define SEM_LOGFILE 4                  //semafor dla pliku logu
 
-//klucze obszarół pamięci współdzielonej (shmget)
-#define SHM_SERVER_IDS 15
-#define SHM_USER_SERVER 20
-#define SHM_ROOM_SERVER 25
+//klucze obszarów pamięci współdzielonej (shmget)
+#define SHM_SERVER_IDS 5
+#define SHM_USER_SERVER 6
+#define SHM_ROOM_SERVER 7
     
     
  //różne wielkości   
@@ -34,6 +34,7 @@ extern "C" {
 
 //int server_ids[15]; //pamiec wspoldzielona Obszar 1: przechowuje listę id na których nasłuchują serwery.
 
+    
 //Obszar 2: przechowuje powiązania nazw użytkowników z identyfiktorami serwerów w postaci tablicy struktur:
 typedef struct {
         char user_name[USER_NAME_MAX_LENGTH];
