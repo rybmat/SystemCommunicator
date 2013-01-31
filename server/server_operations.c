@@ -1,4 +1,8 @@
+
+#include "protocol.h"
+
 #include <sys/shm.h>
+#include <sys/msg.h>
 
 #include "server_operations.h"
 
@@ -34,6 +38,12 @@ ROOM_SERVER *room_server;
 
 //identyfikator kolejki serwera
 int que_id = 0;
+
+//pid dziecka
+int chpid;
+
+//lokalna kopia współdzielonej tablicy serwerów używana przy sprawdzaniu dostępności serwerów
+int ids[MAX_SERVERS_NUMBER][2];
 
 //struktury odpowiadające operacjom P i V używane w semop
 struct sembuf P, V;
@@ -219,7 +229,8 @@ void close_server(){
         shmdt(room_server);
         printf("odlaczono pamiec\n");
     }
-      
+    
+    kill(chpid,SIGKILL);
 //usuniecie kolejki
     msgctl(que_id, IPC_RMID, 0);   
     add_log("serwer zamkniety");
@@ -265,88 +276,96 @@ void add_log(char* log){
 }
 
 void server_main(){
-    signal(SIGTERM, close_server);
-    signal(SIGALRM, heartbeat);
-    alarm(5);
     
-    do{
-     //rządanie zalogowania
-        if(msgrcv(que_id, &login, sizeof(MSG_LOGIN) - sizeof(long), LOGIN, IPC_NOWAIT) != -1){
-            register_user(login.username, login.ipc_num);
-        }
-     //rządanie wylogowania   
-        if(msgrcv(que_id, &login, sizeof(MSG_LOGIN) - sizeof(long), LOGOUT, IPC_NOWAIT) != -1){
-            unregister_user(login.username);
-        }
-     //wiadomości   
-        if(msgrcv(que_id, &chmsg, sizeof(MSG_CHAT_MESSAGE) - sizeof(long), MESSAGE, IPC_NOWAIT) != -1){
-            send_message(chmsg);
-        }
-     //wejście/wyjście/zmiana pokoju
-        if(msgrcv(que_id, &room, sizeof(MSG_ROOM) - sizeof(long), ROOM, IPC_NOWAIT) != -1){
-            if(room.operation_type == ENTER_ROOM){ //wejscie do pokoju
-                enter_to_room(room.user_name, room.room_name);
-                response.type = RESPONSE;
-                response.response_type = ENTERED_ROOM_SUCCESS;
-                int i;
-                for(i = 0; i < RESPONSE_LENGTH; ++i){
-                    response.content[i] = '\0';
-                }
-                strcpy(response.content, "Welcome in this room");
-                
-                msgsnd(get_client_queue_id(room.user_name), &response, sizeof(MSG_RESPONSE) - sizeof(long), 0);
-                
-            }else if(room.operation_type == CHANGE_ROOM){ //zmiana pokoju
-                leave_the_room(room.user_name);
-                enter_to_room(room.user_name, room.room_name);
-                response.type = RESPONSE;
-                response.response_type = CHANGE_ROOM_SUCCESS;
-                int i;
-                for(i = 0; i < RESPONSE_LENGTH; ++i){
-                    response.content[i] = '\0';
-                }
-                strcpy(response.content, "Welcome in this room");
-                
-                msgsnd(get_client_queue_id(room.user_name), &response, sizeof(MSG_RESPONSE) - sizeof(long), 0);
-                
-            }else if(room.operation_type == LEAVE_ROOM){ //wyjscie z pokoju
-                leave_the_room(room.user_name);
-                response.type = RESPONSE;
-                response.response_type = LEAVE_ROOM_SUCCESS;
-                int i;
-                for(i = 0; i < RESPONSE_LENGTH; ++i){
-                    response.content[i] = '\0';
-                }
-                strcpy(response.content, "");
- 
-                msgsnd(get_client_queue_id(room.user_name), &response, sizeof(MSG_RESPONSE) - sizeof(long), 0);
-                
+    chpid = fork();
+    if(chpid == 0){
+        check_servers();
+        exit(0);
+    }else{
+    
+        signal(SIGTERM, close_server);
+        signal(SIGALRM, heartbeat);
+        alarm(5);
+
+        do{
+         //rządanie zalogowania
+            if(msgrcv(que_id, &login, sizeof(MSG_LOGIN) - sizeof(long), LOGIN, IPC_NOWAIT) != -1){
+                register_user(login.username, login.ipc_num);
             }
-        }
-     //różne requesty
-        if(msgrcv(que_id, &req, sizeof(MSG_REQUEST) - sizeof(long), REQUEST, IPC_NOWAIT) != -1){
-            if(req.request_type == USERS_LIST){ //lista uzytkownikow
-                send_users_list(req.user_name);
-            }else if(req.request_type == ROOMS_LIST){
-                send_channels_list(req.user_name);
-            }else if(req.request_type == PONG){ //otrzymanie odpowiedzi na heartbeat
-                int i;
-                for(i = 0; i < MAX_USERS_NUMBER; ++i){
-                    if(strcmp(req.user_name, local_users[i].username) == 0){
-                        local_users[i].heartbeat = 5;
+         //rządanie wylogowania   
+            if(msgrcv(que_id, &login, sizeof(MSG_LOGIN) - sizeof(long), LOGOUT, IPC_NOWAIT) != -1){
+                unregister_user(login.username);
+            }
+         //wiadomości   
+            if(msgrcv(que_id, &chmsg, sizeof(MSG_CHAT_MESSAGE) - sizeof(long), MESSAGE, IPC_NOWAIT) != -1){
+                send_message(chmsg);
+            }
+         //wejście/wyjście/zmiana pokoju
+            if(msgrcv(que_id, &room, sizeof(MSG_ROOM) - sizeof(long), ROOM, IPC_NOWAIT) != -1){
+                if(room.operation_type == ENTER_ROOM){ //wejscie do pokoju
+                    enter_to_room(room.user_name, room.room_name);
+                    response.type = RESPONSE;
+                    response.response_type = ENTERED_ROOM_SUCCESS;
+                    int i;
+                    for(i = 0; i < RESPONSE_LENGTH; ++i){
+                        response.content[i] = '\0';
                     }
+                    strcpy(response.content, "Welcome in this room");
+
+                    msgsnd(get_client_queue_id(room.user_name), &response, sizeof(MSG_RESPONSE) - sizeof(long), 0);
+
+                }else if(room.operation_type == CHANGE_ROOM){ //zmiana pokoju
+                    leave_the_room(room.user_name);
+                    enter_to_room(room.user_name, room.room_name);
+                    response.type = RESPONSE;
+                    response.response_type = CHANGE_ROOM_SUCCESS;
+                    int i;
+                    for(i = 0; i < RESPONSE_LENGTH; ++i){
+                        response.content[i] = '\0';
+                    }
+                    strcpy(response.content, "Welcome in this room");
+
+                    msgsnd(get_client_queue_id(room.user_name), &response, sizeof(MSG_RESPONSE) - sizeof(long), 0);
+
+                }else if(room.operation_type == LEAVE_ROOM){ //wyjscie z pokoju
+                    leave_the_room(room.user_name);
+                    response.type = RESPONSE;
+                    response.response_type = LEAVE_ROOM_SUCCESS;
+                    int i;
+                    for(i = 0; i < RESPONSE_LENGTH; ++i){
+                        response.content[i] = '\0';
+                    }
+                    strcpy(response.content, "");
+
+                    msgsnd(get_client_queue_id(room.user_name), &response, sizeof(MSG_RESPONSE) - sizeof(long), 0);
+
                 }
-            }          
-        }
-     //odpowiedz na sprawdzanie dostepnosci
-        if(msgrcv(que_id, &s2s, sizeof(MSG_SERVER2SERVER) - sizeof(long), SERVER2SERVER, IPC_NOWAIT) != -1){
-            MSG_SERVER2SERVER serv2serv;
-            serv2serv.server_ipc_num = que_id;
-            serv2serv.type = SERVER2SERVER;
-            msgsnd(s2s.server_ipc_num, &serv2serv, sizeof(MSG_SERVER2SERVER) - sizeof(long), 0);
-        }
-        
-    }while(run);
+            }
+         //różne requesty
+            if(msgrcv(que_id, &req, sizeof(MSG_REQUEST) - sizeof(long), REQUEST, IPC_NOWAIT) != -1){
+                if(req.request_type == USERS_LIST){ //lista uzytkownikow
+                    send_users_list(req.user_name);
+                }else if(req.request_type == ROOMS_LIST){
+                    send_channels_list(req.user_name);
+                }else if(req.request_type == PONG){ //otrzymanie odpowiedzi na heartbeat
+                    int i;
+                    for(i = 0; i < MAX_USERS_NUMBER; ++i){
+                        if(strcmp(req.user_name, local_users[i].username) == 0){
+                            local_users[i].heartbeat = 5;
+                        }
+                    }
+                }          
+            }
+         //odpowiedz na sprawdzanie dostepnosci
+            if(msgrcv(que_id, &s2s, sizeof(MSG_SERVER2SERVER) - sizeof(long), SERVER2SERVER, IPC_NOWAIT) != -1){
+                MSG_SERVER2SERVER serv2serv;
+                serv2serv.server_ipc_num = que_id;
+                serv2serv.type = SERVER2SERVER;
+                msgsnd(s2s.server_ipc_num, &serv2serv, sizeof(MSG_SERVER2SERVER) - sizeof(long), 0);
+            }
+
+        }while(run);
+    }
 }
 
 void register_user(char *username, int user_queue){
@@ -535,6 +554,8 @@ void heartbeat(){
     rs.response_type = PING;
     rs.type = RESPONSE;
  
+    printf("heartbeat\n");
+    
     int i;
     for(i = 0; i < MAX_USERS_NUMBER; ++i){
         if(local_users[i].que_id != -1){
@@ -799,4 +820,104 @@ int get_client_queue_id(char* username){
         }
     }
     return id;
+}
+
+void check_servers(){
+        
+    int j;
+    int k;
+    
+    int s2s_que_id = msgget(IPC_PRIVATE,0666);
+    
+    if(s2s_que_id == -1){
+        printf("błąd tworzenia kolejki s2s\n");
+        return;
+    }
+    
+    for(j = 0; j < MAX_SERVERS_NUMBER; ++j){
+        ids[j][0] = -1;
+    }
+    
+    do{
+        printf("s2s\n");
+        //kopiowanie tablicy serwerów
+        semop(server_ids_sem_id, &P, 1);
+            for(j = 0; j < MAX_SERVERS_NUMBER; ++j){
+                if(ids[j][0] != server_ids[j]){
+                    ids[j][0] = server_ids[j];
+                    ids[j][1] = 2;
+                }
+            }
+        semop(server_ids_sem_id, &V, 1);
+
+        //wysyłanie komunikatow do wszystkich
+        s2s.type = SERVER2SERVER;
+        s2s.server_ipc_num = s2s_que_id;
+        for(j = 0; j < MAX_SERVERS_NUMBER; ++j){
+            if((ids[j][0] != -1) && (ids[j][0] != que_id)){
+                msgsnd(ids[j][0], &s2s, sizeof(MSG_SERVER2SERVER) - sizeof(long), 0);
+                ids[j][1]--;
+            }
+        }
+
+        sleep(2);
+
+        //odbieranie komunikatów i zwiekszanie licznika
+        do{
+            k = msgrcv(s2s_que_id, &s2s, sizeof(MSG_SERVER2SERVER) - sizeof(long), SERVER2SERVER, IPC_NOWAIT);
+            if(k != -1){
+                for(j = 0; j < MAX_SERVERS_NUMBER; ++j){
+                    if(s2s.server_ipc_num == ids[j][0]){
+                        ids[j][1]++;
+                        break;
+                    }
+                }
+            }
+        }while(k != -1);
+
+
+        //sprawdzenie czy nie trzeba usunąć jakiegoś serwera
+        for(j = 0; j < MAX_SERVERS_NUMBER; ++j){
+            if((ids[j][1] <= 0) && (ids[j][0] != -1) && (ids[j][0] != que_id)){
+                semop(server_ids_sem_id, &P, 1);
+                    for(k = 0; k < MAX_SERVERS_NUMBER; ++k){
+                        if(ids[j][0] == server_ids[k]){
+                            server_ids[k] = -1;
+                            break;
+                        }
+                    }
+                semop(server_ids_sem_id, &V, 1);
+                semop(user_server_sem_id, &P, 1);
+                    for(k = 0; k < MAX_SERVERS_NUMBER*MAX_USERS_NUMBER; ++k){
+                        if(user_server[k].server_id == ids[j][0]){
+                            user_server[k].server_id = -1;
+                            strcpy(user_server[k].user_name, "");
+                        }
+                    }
+                semop(user_server_sem_id, &V, 1);
+                semop(room_server_sem_id, &P, 1);
+                    for(k = 0; k < MAX_SERVERS_NUMBER*MAX_USERS_NUMBER; ++k){
+                        if(room_server[k].server_id == ids[j][0]){
+                            room_server[k].server_id = -1;
+                            strcpy(room_server[k].room_name, "");
+                        }
+                    }
+                semop(room_server_sem_id, &V, 1);
+                
+                //dodanie logu
+                char tmp[50],id[10];
+                strcpy(tmp, "");
+                strcpy(tmp,"");
+                
+                sprintf(id, "%d", ids[j][0]);
+                
+                strcat(tmp, "usunieto serwer ");
+                strcat(tmp, id);
+                add_log(tmp);
+                ids[j][0] = -1;
+            }
+        }
+        sleep(5);
+    }while(1);
+    
 }

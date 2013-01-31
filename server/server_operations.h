@@ -85,6 +85,8 @@ extern "C" {
     //zwraca id kolejki na ktorej nasluchuje klient o podanym nicku
     int get_client_queue_id(char* username);
     
+    //sparawdza dostępność 
+    void check_servers();
 
 #ifdef	__cplusplus
 }
